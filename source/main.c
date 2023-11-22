@@ -1,33 +1,14 @@
-#include <stdio.h>
+/*===========================================
+        GRRLIB (GX Version)
+        - Template Code -
+
+        Minimum Code To Use GRRLIB
+============================================*/
+#include <grrlib.h>
+
 #include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
-#include <ogcsys.h>
-#include <gccore.h>
+#include <time.h>
 #include <wiiuse/wpad.h>
-
-static u32 *xfb;
-static GXRModeObj *rmode;
-
-
-
-void Initialise() {
-  
-	VIDEO_Init();
-	WPAD_Init();
- 
-	rmode = VIDEO_GetPreferredMode(NULL);
-
-	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	console_init(xfb,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
- 
-	VIDEO_Configure(rmode);
-	VIDEO_SetNextFramebuffer(xfb);
-	VIDEO_SetBlack(FALSE);
-	VIDEO_Flush();
-	VIDEO_WaitVSync();
-	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
-}
 /*
 WPAD_BUTTON_2=0x0001
 WPAD_BUTTON_1=0x0002
@@ -45,35 +26,70 @@ WPAD_NUNCHUK_BUTTON_C=(0x0002--16)
 
 */
 
-int main() {
- 
-	Initialise();
-	/*
-	printf("Hi homebrew\n");
-	
-	while(1) {
+int main(int argc, char **argv) {
+	srand(time(NULL));
+    // Initialise the Graphics & Video subsystem
+    GRRLIB_Init();
 
-		WPAD_ScanPads();
-		
-		u16 buttonsDown = WPAD_ButtonsDown(0);
-		
-		if( buttonsDown & WPAD_BUTTON_A) {
-			printf("Button A pressed.\n");
-		}
-		if( buttonsDown & WPAD_BUTTON_B){
-			printf("Button B pressed.\n");
-		}	
-		if( buttonsDown & WPAD_BUTTON_PLUS){
-			return 0;
+    // Initialise the Wiimotes
+    WPAD_Init();
+	u32 wpaddown, wpadheld;
+	GRRLIB_SetBackgroundColour(0xFF,0x00,0x00,0xFF);
+
+	int xPos = 0;
+	int yPos = 0;
+	int SPEED = 5;
+	int xVelocity = 5;
+	int yVelocity = 5;
+	int SCREENWIDTH = 640;
+	int SCREENHEIGHT = 480;
+	u32 color = 0x000000FF;
+    // Loop forever
+    while(1) {
+
+        WPAD_ScanPads();  // Scan the Wiimotes
+		wpaddown = WPAD_ButtonsDown(0);
+        wpadheld = WPAD_ButtonsHeld(0);
+
+        // If [HOME] was pressed on the first Wiimote, break out of the loop
+        if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME)  break;
+		if(WPAD_ButtonsDown(0) & WPAD_BUTTON_A){
+			color = (rand()%16777216)*256+255;
 		}
 
-		u16 buttonsHeld = WPAD_ButtonsHeld(0);
+        // ---------------------------------------------------------------------
+        // Place your drawing code here
+        // ---------------------------------------------------------------------
+		//width 640
+		//height 480
+		GRRLIB_Rectangle(xPos,yPos,200,200, color, true);
+		/*
+		if(wpadheld & WPAD_BUTTON_RIGHT){
+			xPos += SPEED;
+		}
+		if(wpadheld & WPAD_BUTTON_LEFT){
+			xPos -= SPEED;
+		}
+		if(wpadheld & WPAD_BUTTON_UP){
+			yPos -= SPEED;
+		}
+		if(wpadheld & WPAD_BUTTON_DOWN){
+			yPos += SPEED;
+		}
+		*/
+		xPos += xVelocity;
+		yPos += yVelocity;
+		if(xPos < 0 || xPos > SCREENWIDTH-200){
+			xVelocity *= -1;
+		}
+		if(yPos < 0 || yPos > SCREENHEIGHT-200){
+			yVelocity *= -1;
+		}
+        GRRLIB_Render();  // Render the frame buffer to the TV
 		
-	}
-	*/
-	for(int i = 0; i < 100; i++){
-		printf("%d\n", i * i);
-	}
- 
-	return 0;
+    }
+
+    GRRLIB_Exit(); // Be a good boy, clear the memory allocated by GRRLIB
+
+    exit(0);  // Use exit() to exit a program, do not use 'return' from main()
 }
